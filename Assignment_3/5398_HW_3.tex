@@ -1,0 +1,203 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Homework 3, STAT 5398}
+	\author{Zongyi Liu}
+	\date{Wed, Dec 10, 2025}
+	\begin{document}
+		\maketitle
+		
+		
+		\section{Introduction}
+		
+		\subsection{Background and Motivation}
+		
+		Traditional quantitative trading strategies primarily rely on structured numerical data such as historical prices, returns, and accounting variables. While these approaches have been successful in many settings, they often struggle to incorporate unstructured information, particularly real-time news and textual data. As a result, conventional models may react slowly to market-moving events or fail to capture short-term sentiment-driven price dynamics.
+		
+		Recent advances in Large Language Models (LLMs) provide a new opportunity to address this limitation. LLMs are capable of processing large volumes of unstructured text and extracting economically meaningful signals, such as sentiment, relevance, and event classifications. These capabilities make LLMs particularly suitable for enhancing quantitative trading strategies with news-driven information.
+		
+		\subsection{Contribution of This Study}
+		
+		In this report, we propose an LLM-enhanced quantitative trading strategy that integrates FinRL-based stock selection with FinGPT-driven timing signals. Unlike traditional approaches that use machine learning models solely as return predictors, our framework treats LLMs as factor generators that transform unstructured news data into structured numerical signals.
+		
+		Specifically, FinRL is employed to construct a tradable stock universe, while FinGPT is used to analyze firm-specific news and generate sentiment-based and prediction-based factors. These factors are subsequently incorporated into a systematic trading strategy and evaluated through a historical backtest. This study demonstrates how LLMs can be embedded into a standard quantitative research pipeline in a transparent and reproducible manner.
+		
+		\section{Role of LLMs in Quantitative Research}
+		
+		\subsection{LLMs as Research Assistants}
+		
+		Large Language Models (LLMs) can be effectively used as research assistants in quantitative finance by automating the processing and interpretation of large volumes of textual information. In the context of this study, LLMs are employed to summarize firm-specific news, identify key positive and negative drivers, and provide high-level qualitative assessments of recent events.
+		
+		By leveraging LLMs in this manner, researchers can significantly reduce the time required for manual news screening and focus instead on strategy design and empirical validation. Importantly, in this role, LLMs do not directly generate trading decisions but rather support the research process by improving information efficiency.
+		
+		\subsection{LLMs as Signal Generators}
+		
+		Beyond their role as research assistants, LLMs can also function as signal generators by transforming unstructured news text into structured numerical factors. This capability is particularly valuable for constructing systematic, news-driven trading strategies.
+		
+		In this study, FinGPT is used to analyze firm-level news articles and generate quantitative outputs, including predicted future returns and sentiment scores. These outputs are timestamped and aligned with corresponding asset identifiers, allowing them to be integrated into a standard factor-based trading framework.
+		
+		Crucially, LLM outputs are not treated as direct trading signals. Instead, they are interpreted as intermediate factors that are subsequently aggregated, normalized, and filtered according to predefined rules. This design choice enhances the transparency and robustness of the strategy and reduces the risk of overfitting.
+		
+		\subsection{Position of LLMs in the Research Pipeline}
+		
+		LLMs operate between raw data collection and factor construction, serving as a bridge between unstructured information and structured quantitative signals.
+		
+		This modular design allows LLM components to be modified or replaced without altering the remaining components of the strategy. As a result, the proposed framework remains flexible, interpretable, and suitable for systematic backtesting.
+		
+		\section{Implementing LLM}
+		
+		\subsection{Asset and Index Selection}
+		
+		The asset universe used in this study is constructed based on the constituent stocks of a major U.S. equity index. Index constituents are chosen to ensure sufficient liquidity, stable data availability, and comprehensive news coverage. Restricting the universe to large-cap stocks also reduces microstructure noise and transaction cost concerns, which is particularly important for news-driven strategies.
+		
+		The index-based universe selection we did was to choose stocks based on S\&P 500, as well as QQQ. There are also other indexes can be selected, such as Russell 1000 or CRSP US Total Market Index. Compared with narrower benchmarks, the Russell 1000 provides greater cross-sectional diversity while maintaining high liquidity, making it well suited for correlation analysis and portfolio construction. CRSP U.S. Total Market Index covers nearly the entire U.S. equity market. Its comprehensive market coverage and consistency with standard asset-pricing datasets make it a natural choice for empirical portfolio analysis.
+		
+		\subsection{News Data Collection}
+		
+		Firm-specific news data are collected using a combination of public APIs and web-based data sources. Each news item includes the publication timestamp, associated ticker symbol, headline, and full text. News articles are filtered to remove duplicates and non-informative content, such as purely technical announcements or irrelevant market commentary.
+		
+		To align textual information with market data, news articles are aggregated at a daily frequency. All news released outside regular trading hours is assigned to the next trading day. This alignment procedure mitigates potential look-ahead bias and ensures that only information available prior to trading decisions is used.
+		
+		In this case I hope to focus on major U.S.\ macroeconomic announcements as the source of news in our analysis. These announcements provide clearly identified release dates, affect a broad set of market participants, and can be treated as exogenous information shocks to the equity market. In particular, we consider regularly scheduled macroeconomic releases such as the Consumer Price Index (CPI), Federal Open Market Committee (FOMC) interest rate decisions, and Nonfarm Payrolls reports, all of which have been widely documented to influence stock returns and volatility. To ensure consistency with the equity universe drawn from the Russell~1000 or the CRSP U.S.\ Total Market Index, we restrict attention to U.S.-related macroeconomic news only. Rather than analyzing individual news texts, we construct event-based indicator variables that distinguish announcement days from non-announcement days, which facilitates reproducible and quantitative analysis of return, volatility, and tail-risk behavior around macroeconomic news events.
+		
+		
+		
+		\subsection{FinGPT Output Design}
+		
+		FinGPT is applied to the collected news articles to generate structured outputs from unstructured text. For each news item, the model produces quantitative assessments, including a predicted future return and a sentiment score reflecting the overall tone of the news. These outputs are generated using a fixed prompt template to ensure consistency across assets and time periods.
+		
+		The FinGPT outputs are formatted in a structured manner and stored together with their corresponding timestamps and ticker identifiers. This design allows the outputs to be treated as intermediate variables rather than direct trading signals.
+		
+		\subsection{Sentiment and Prediction Factors}
+		
+		Let $s_{i,t}^{(k)}$ denote the sentiment score generated by FinGPT for the $k$-th news article related to asset $i$ on day $t$. The daily sentiment factor for asset $i$ on day $t$ is constructed as
+		\[
+		S_{i,t} = \frac{1}{N_{i,t}} \sum_{k=1}^{N_{i,t}} s_{i,t}^{(k)},
+		\]
+		where $N_{i,t}$ denotes the number of news articles associated with asset $i$ on day $t$.
+		
+		Similarly, predicted returns generated by FinGPT are aggregated at the daily level to form a prediction-based factor. Both sentiment and prediction factors are standardized cross-sectionally to remove scale effects and improve comparability across assets.
+		
+		\subsection{Economic Interpretation}
+		
+		The constructed factors aim to capture short-term market reactions to firm-specific information. Positive sentiment or favorable predictions are expected to be associated with upward price movements, while negative signals may indicate downward pressure. By explicitly converting textual information into numerical factors, the proposed approach embeds LLM outputs into a traditional factor-based framework.
+		
+		\section{Trading Strategy Design}
+		
+		\subsection{Signal Generation Rules}
+		
+		Trading signals are generated based on the standardized LLM-based factors. For each asset $i$ on day $t$, the trading signal is defined as
+		\[
+		\text{Signal}_{i,t} =
+		\begin{cases}
+			+1, & \text{if } F_{i,t} > \theta, \\
+			-1, & \text{if } F_{i,t} < -\theta, \\
+			0, & \text{otherwise},
+		\end{cases}
+		\]
+		where $F_{i,t}$ denotes the combined LLM-based factor and $\theta$ is a predefined threshold. This rule-based structure ensures transparency and reduces model complexity.
+		
+		
+		\section{Hybrid Strategy Overview}
+		We propose a hybrid approach:
+		\begin{enumerate}
+			\item {Selection:} FinRL-Trading fundamentals + ML to select a quarterly universe (Assignment~1).
+			\item {Timing:} FinGPT model to analyze recent news and generate short-horizon signals (Assignment~2).
+			\item {Execution:} translate LLM outputs into a numeric factor (e.g., predicted return / sentiment score) and apply trading rules.
+			\item {Backtest:} evaluate against S\&P~500 over Dec 2024--Nov 2025 (or longer).
+		\end{enumerate}
+		
+		Prior studies show that financial news contains predictive information that is incorporated into prices with delay \cite{hong1999gradual,tetlock2007giving}. 
+		Advances in textual analysis further demonstrate that the semantic content of firm-specific news can forecast future returns \cite{tetlock2008more,loughran2011liability}. 
+		Recent machine learning and LLM-based approaches extend this literature by extracting richer signals from unstructured text \cite{yang2018practical,gite2021explainable}. A general procession of selecting stocks based on news and other data can be illustrated as below.
+		
+		
+		\includegraphics[max width=0.9\textwidth, center]{predict}
+		\captionof{figure}{Diagram of using LLM to Predict Stock based on News and other Data (\cite{gite2021explainable})} 
+		
+		\subsection{Signal Construction and Results}
+		Let $s_{i,t}$ denote an LLM-derived score (e.g., predicted return, or sentiment aggregated over recent news). Example rule:
+		\[
+		\text{Go long } i \text{ if } s_{i,t} \ge \tau,\quad \text{otherwise hold cash or reduce weight}.
+		\]
+		Weights can be normalized within the selected universe and constrained to be long-only; and I finally reached a backtesting result as below, which indicated that with the help of LLM, the returns of strategies would be much better.
+		
+		Incorporating FinGPT-based news information leads to higher portfolio returns because news provides forward-looking signals that are not immediately and fully reflected in asset prices. By conditioning expected returns on textual information extracted from financial news, FinGPT improves the signal-to-noise ratio in return forecasting and enhances stock selection. Within a mean--variance framework, this primarily increases the accuracy of the expected return vector rather than altering the covariance structure, resulting in higher realized returns and improved risk-adjusted performance.
+		
+		Here is the result I ran the return based on FinGPT strategy and SPY (SPDR S\&P 500 ETF Trust).
+		
+		\includegraphics[max width=\textwidth, center]{HW3}
+		\captionof{figure}{Diagram of Return from December 2024 to November 2025}
+		
+		\subsection{Discussion}
+		
+		Large language models (LLMs) are particularly effective at processing financial news. Models such as DeepSeek can rapidly analyze large volumes of news articles and extract salient sentiment signals, a task that would require substantially more time for human analysts. Moreover, traditional keyword-based sentiment methods often fail to capture contextual and semantic nuances present in financial text.
+		
+		Model quality plays a crucial role in the effectiveness of trading signals. The superior predictive performance of the base model translated directly into stronger trading signals, highlighting the importance of selecting an appropriate LLM architecture. As we did in Assignment 2, fine-tuned models give much higher returns than the base model, and the Llama--3 model works better than DeepSeek under nearly all metrics. When we run the model, we should take more consideration into 
+		
+		Finally, combining multiple signals yields better performance than relying on a single source. While fundamental screening in Assignment~1 identified high-quality stocks, incorporating LLM-based news timing substantially enhanced portfolio returns. The LLM helps filter out short-term noise induced by transient negative news while capturing momentum driven by positive information, resulting in improved overall performance.
+		
+		
+		\bibliographystyle{unsrt}
+		\bibliography{ref}
+		
+		
+		
+	\end{document}
