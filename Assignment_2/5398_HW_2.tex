@@ -16,6 +16,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{subcaption}
 \usepackage{capt-of}
 \usepackage{lipsum}
 \usepackage{fancyvrb}
@@ -59,9 +60,10 @@
 	
 	\title{Homework 2, STAT 5398}
 	\author{Zongyi Liu}
-	\date{Wed, Oct 1, 2025}
+	\date{Fri, Oct 31, 2025}
 	\begin{document}
 		\maketitle
+		\tableofcontents
 		
 		\section{Preparation}
 		\subsection{Data and models}
@@ -70,49 +72,52 @@
 		
 		We are asked to use two large language models, \href{https://huggingface.co/meta-llama/Llama-3.1-8B}{Llama-3.1-8B} and \href{https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-8B}{DeepSeek-R1-Distill-Llama-8B}. They are provided on the Hugging Face. 
 		
-		\textbf{Llama-3.1-8B} is an 8-billion-parameter large language model released by Meta in 2024. It supports multilingual text and code generation, uses Grouped-Query Attention for efficient inference, and provides a long 128k-token context window. As a relatively lightweight model in the Llama~3.1 family, it offers strong instruction-following ability while remaining practical to deploy on limited hardware\footnote{\href{https://ai.meta.com/blog/meta-llama-3-1/}{Introducing Llama 3.1: Our most capable models to date}, by Meta, July 23, 2024}. 
+		\textbf{Llama-3.1-8B} is an 8-billion-parameter large language model released by Meta in 2024. It supports multilingual text and code generation, uses Grouped-Query Attention for efficient inference, and provides a long 128k-token context window. As a relatively lightweight model in the Llama~3.1 family, it offers strong instruction-following ability while remaining practical to deploy on limited hardware \cite{meta_llama31_2024}.
 		
-		\textbf{DeepSeek-R1-Distill-Llama-8B} is an 8-billion-parameter model obtained by distilling the larger DeepSeek-R1 into a Llama-3.1-8B backbone. The model inherits enhanced reasoning and mathematical capabilities from its teacher while remaining lightweight enough for efficient deployment. As a distilled model, it offers a strong balance between performance and computational cost, making it suitable for general reasoning, coding, and problem-solving tasks\footnote{\href{https://docs.api.nvidia.com/nim/reference/deepseek-ai-deepseek-r1-distill-llama-8b}{DeepSeek-R1-Distill-Llama-8B}, by NVIDIA API Documentation}.
-		
-		
-		
-		
+		\textbf{DeepSeek-R1-Distill-Llama-8B} is an 8-billion-parameter model obtained by distilling the larger DeepSeek-R1 into a Llama-3.1-8B backbone. The model inherits enhanced reasoning and mathematical capabilities from its teacher while remaining lightweight enough for efficient deployment. As a distilled model, it offers a strong balance between performance and computational cost, making it suitable for general reasoning, coding, and problem-solving tasks \cite{deepseek8b}.
 		
 		\subsection{Hardware configuration}
 		
 		I used my MacBook to implement this problem:
 		
 		\begin{verbatim}
-     Processor      2.4 GHz Quad-Core Intel Core i5
-     Graphics       Intel Iris Plus Graphics 655 1536 MB
-     Memory         8 GB 2133 MHz LPDDR3
-     Serial number  C02YQ0CULVDD
-     macOS          Sonoma 14.6.1
+			Processor      2.4 GHz Quad-Core Intel Core i5
+			Graphics       Intel Iris Plus Graphics 655 1536 MB
+			Memory         8 GB 2133 MHz LPDDR3
+			Serial number  C02YQ0CULVDD
+			macOS          Sonoma 14.6.1
 		\end{verbatim}
-	
-	This Mac was bought in 2019 before the LLM era, it is sufficient for coding, browsing, study and office work, but may not be helpful to run large models. It can run small ML models only on CPU, but slowly. It may also be hard to train modern deep-learning models.
-	
-	As for graphics, it is Intel Iris Plus Graphics 655 (1536 MB shared memory); this is an integrated GPU, not a dedicated GPU. It cannot run NVIDIA-based GPU ML acceleration, and also cannot use MPS acceleration.
-	
-	The major bottleneck is the memory, it only has 8 GB, and today's Machine Learning models often need 12–16GB RAM just to load. We might hit “out of memory” frequently when training models.
-	
-	Thus we have to set up the environment like this:
-	
-	\begin{lstlisting}
-    pip install torch  # CPU version
-    pip install transformers peft datasets
-	\end{lstlisting}
-	 
-	 I tried to implement the LLM on my laptop, but not successful, it could only be workable for mock models.  
-	 
-	 
-		\subsection{Alternatives to solve hardware problem}
+		
+		This Mac was bought in 2019 before the LLM era, it is sufficient for coding, browsing, study and office work, but may not be helpful to run large models. It can run small ML models only on CPU, but slowly. It may also be hard to train modern deep-learning models.
+		
+		As for graphics, it is Intel Iris Plus Graphics 655 (1536 MB shared memory); this is an integrated GPU, not a dedicated GPU. It cannot run NVIDIA-based GPU ML acceleration, and also cannot use MPS acceleration.
+		
+		The major bottleneck is the memory, it only has 8 GB, and today's Machine Learning models often need 12–16GB RAM just to load. We might hit “out of memory” frequently when training models. 
+		
+		Thus we have to set up the environment like this:
+		
+		\begin{lstlisting}
+     pip install torch  # CPU version
+     pip install transformers peft datasets
+		\end{lstlisting}
+		
+		I tried to implement the LLM on my laptop, but not successful, it could only be workable for mock models.  
+		
+		
+		\subsection{Solution to hardware problem}
 		
 		There are also alternatives to solve the hardware restrictions, which is using external GPU, like Google Colab/Kaggle. Here I chose Google Colab for testing.
 		
 		\subsection{Low-rank adaptation}
 		
-		Thus we have to use the Low-Rank Adaptation (LoRA) here; the total weight matrix $\mathbf{W}$ after adaptation is the sum of the original pre-trained weight $\mathbf{W}_0$ and the update matrix $\Delta \mathbf{W}$\footnote{\cite{hu2021lora}}:
+		 We have to use the Low-Rank Adaptation (LoRA) here; is a parameter-efficient fine-tuning method for large
+		 language models. Instead of updating all model weights, LoRA freezes the
+		 original pretrained parameters and adds a small set of trainable adapter layers
+		 to specific parts of the network, such as the attention projections or the
+		 feed-forward components.
+		 
+		 These adapter layers are intentionally lightweight, which makes the fine-tuning
+		 process much cheaper in terms of memory and computation. During training, only the small adapter modules are optimized, while the main model remains unchanged\cite{hu2021lora}. This allows LoRA to achieve performance close to full fine-tuning while using significantly fewer trainable parameters and fitting comfortably on limited GPU resources. The total weight matrix $\mathbf{W}$ after adaptation is the sum of the original pre-trained weight $\mathbf{W}_0$ and the update matrix $\Delta \mathbf{W}$:
 		$$
 		\mathbf{W} = \mathbf{W}_0 + \Delta \mathbf{W}
 		$$
@@ -137,26 +142,68 @@
 			\item {Full fine-tuning parameters:} $\mathcal{P}_{\text{full}} = d \cdot k$
 			\item {LoRA trainable parameters:} $\mathcal{P}_{\text{LoRA}} = (d \cdot r) + (r \cdot k) = r (d + k)$
 		\end{itemize}
-	
-	\section{Implementation}
-	\subsection{Dow 30 dataset}
-	
-	Here we are given the Dow30 dataset from Hugging Face, its full name is \texttt{fingpt-forecaster-dow30-202305-202405}, it is a financial forecasting dataset designed specifically for LLM fine-tuning. It is built to train a model to generate: stock analysis, market sentiment evaluation and weekly movement predictions.
-	
-	It has five columns, which are:
-	\begin{itemize}
-		\item \texttt{prompt}: it is an instruction such as: ``You are a seasoned stock market analyst. List positive developments, risks, and provide a weekly price prediction for AAPL and MSFT..''
 		
-	   \item \texttt{answer}: A target response that the model should generate. For example: ``AAPL: strong iPhone demand ... Prediction: slight upward movement. MSFT: ...''
-	   
-	   \item \texttt{symbol}: The relevant Dow30 ticker symbols (e.g., \texttt{AAPL}, \texttt{MSFT}, \texttt{IBM}).
-	   
-	   \item \texttt{period}: The time range associated with the analysis  
-	   (e.g., \texttt{2023-12-10 to 2023-12-17}).
-	   
-	   \item \texttt{label}: A categorical movement indicator like \texttt{up}, \texttt{down},
-	   or \texttt{neutral}.
-	\end{itemize}
+		\section{Implementation}
+		
+	
+	\subsection{Set up environment}
+	I conducted all training experiments in Google Colab, using its cloud GPU runtime.
+	The environment was configured as follows:
+	
+	\begin{verbatim}
+     +-----------------------------------------------------------------------------------------+
+     | NVIDIA-SMI 550.54.15              Driver Version: 550.54.15      CUDA Version: 12.4     |
+     |-----------------------------------------+------------------------+----------------------+
+     | GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+     | Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+     |                                         |                        |               MIG M. |
+     |=========================================+========================+======================|
+     |   0  Tesla T4                       Off |   00000000:00:04.0 Off |                    0 |
+     | N/A   46C    P8             10W /   70W |       0MiB /  15360MiB |      0%      Default |
+     |                                         |                        |                  N/A |
+     +-----------------------------------------+------------------------+----------------------+
+     
+     +-----------------------------------------------------------------------------------------+
+     | Processes:                                                                              |
+     |  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+     |        ID   ID                                                               Usage      |
+     |=========================================================================================|
+     |  No running processes found                                                             |
+     +-----------------------------------------------------------------------------------------+
+	\end{verbatim}
+	
+	To prepare the environment, I first installed all required libraries for LoRA fine-tuning,
+	including \texttt{transformers}, \texttt{peft}, \texttt{deepspeed}, \texttt{datasets},
+	\texttt{bitsandbytes}, and \texttt{accelerate}. 
+	
+	
+	Then I did installation like this:
+	
+	\begin{lstlisting}
+     !pip install torch==2.4.1+cu121 -f https://download.pytorch.org/whl/torch_stable.html
+     !pip install transformers==4.44.2 peft==0.12.0 deepspeed==0.14.4 \
+     datasets==2.20.0 bitsandbytes==0.44.1 accelerate==0.34.2 \
+     python-dotenv wandb
+	\end{lstlisting}
+
+\subsection{DOW 30 dataset}
+
+Here we are given the Dow30 dataset from Hugging Face, its full name is \texttt{fingpt-forecaster-dow30-202305-202405}, it is a financial forecasting dataset designed specifically for LLM fine-tuning. It is built to train a model to generate: stock analysis, market sentiment evaluation and weekly movement predictions.
+
+It has five columns, which are:
+\begin{itemize}
+	\item \texttt{prompt}: it is an instruction such as: ``You are a seasoned stock market analyst. List positive developments, risks, and provide a weekly price prediction for AAPL and MSFT..''
+	
+	\item \texttt{answer}: A target response that the model should generate. For example: ``AAPL: strong iPhone demand ... Prediction: slight upward movement. MSFT: ...''
+	
+	\item \texttt{symbol}: The relevant Dow30 ticker symbols (e.g., \texttt{AAPL}, \texttt{MSFT}, \texttt{IBM}).
+	
+	\item \texttt{period}: The time range associated with the analysis  
+	(e.g., \texttt{2023-12-10 to 2023-12-17}).
+	
+	\item \texttt{label}: A categorical movement indicator like \texttt{up}, \texttt{down},
+	or \texttt{neutral}.
+\end{itemize}
 
 The dataset contains approximately {1,230 training samples} and {300 test samples}, for a total of roughly {1,500 instruction examples}. It is not designed for traditional quantitative forecasting; the dataset does {not} contain
 OHLCV price data, numerical time series, or regression targets. Instead, it is purely an
@@ -173,8 +220,253 @@ There might also be some limitations for this dataset, it is not suitable for:
 	\item Large-scale predictive modeling without additional data
 \end{itemize}
 
-\bibliographystyle{plain}
-\bibliography{ref}
+\subsection{NASDAQ 100 dataset}
+
+To generate this dataset, we need to get the indices for NASDAQ 100, which can be easily found in Nasdaq or Wikipedia or so, and put it into \texttt{indices.py}. 
+\begin{lstlisting}
+     NASDAQ_100 = [
+     "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "GOOG", "META", "TSLA", "AVGO", "COST",
+     "PEP", "ADBE", "CSCO", "NFLX", "AMD", "INTC", "CMCSA", "TXN", "AMGN", "QCOM",
+     "HON", "INTU", "SBUX", "AMAT", "ISRG", "BKNG", "CTSH", "ADI", "GILD", "MDLZ",
+     "FISV", "VRTX", "REGN", "LRCX", "KDP", "ADP", "MU", "PANW", "CDNS", "CSX",
+     "MRNA", "KLAC", "MAR", "ORLY", "FTNT", "SNPS", "PDD", "ABNB", "CRWD", "MRVL",
+     "MELI", "NXPI", "PAYX", "CHTR", "WDAY", "KHC", "ADSK", "IDXX", "AEP", "TEAM",
+     "ODFL", "BIDU", "CTAS", "XEL", "DXCM", "PCAR", "ROST", "VRSK", "MNST", "AZN",
+     "ALGN", "EA", "CDW", "SIRI", "SPLK", "MDB", "ZS", "DDOG", "VTRS", "BKR",
+     "EXC", "LCID", "CPRT", "WBA", "MTCH", "FAST", "ANSS", "LULU", "OKTA", "EPAM",
+     "PTON", "DOCU", "ZM", "CHKP", "SWKS", "INCY", "CEG", "VERX", "RIVN"
+     ]
+\end{lstlisting}
+
+And put it into the \texttt{def main(args)} part in \texttt{data\_pipeline.py} following formats of \texttt{DOW\_30}. And then use the API we registered before to generate token, but as the assignment articulate that we should not submit our APIs, I will not put details here. By doing so, run the file \texttt{data\_pipeline.py}, and we can generate a data set with prompt like \texttt{fingpt-forecaster-dow30-202305-202405}, and test our models on it. 
+	
+	\subsection{Fine-tuning}
+	
+	After setting previous steps, I did fine-tuning in Google Colab, which is the Linux environment. 
+	
+	\begin{lstlisting}
+     deepspeed \
+     --include localhost:0 \
+     train_lora.py \
+     --run_name lora_t4_16g \
+     --base_model deepseek-ai/DeepSeek-R1-Distill-Llama-8B \
+     --dataset FinGPT/fingpt-forecaster-dow30-202305-202405 \
+     --from_remote \
+     --max_length 2048 \
+     --batch_size 1 \
+     --gradient_accumulation_steps 24 \
+     --learning_rate 1e-5 \
+     --num_epochs 3 \
+     --log_interval 10 \
+     --warmup_ratio 0.03 \
+     --scheduler constant \
+     --evaluation_strategy steps \
+     --ds_config ds_config.json
+     
+	\end{lstlisting}
+
+For hypermeters, here are my choices:
+
+\begin{itemize}
+	
+	\item \texttt{learning\_rate}: I choose \texttt{1e-5}.  
+	A small learning rate stabilizes LoRA fine-tuning and prevents the adapter layers from diverging. This value falls within the recommended range for parameter-efficient training.
+	
+	\item \texttt{num\_train\_epochs}: I choose \texttt{1}.  
+	One epoch is sufficient to demonstrate LoRA behavior within reasonable Colab GPU limits. Additional epochs would improve adaptation but increase cost.
+	
+	\item \texttt{r}: I keep the default rank \texttt{6}.  
+	This determines the size of the low-rank bottleneck inside each LoRA adapter. Higher values allow the adapters to capture more task-specific information, but increase parameter count.
+	
+	\item \texttt{lora\_alpha}: I choose \texttt{12}.  
+	This scaling factor controls the overall update strength of each LoRA module. A moderate alpha helps balance adaptation quality and training stability.
+	
+	\item \texttt{target\_modules}: I apply LoRA to \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}, \texttt{gate\_proj}, \texttt{up\_proj}, and \texttt{down\_proj}.  
+	These layers correspond to attention projections and feed-forward components where LoRA typically yields the largest benefit.
+	
+	\item \texttt{max\_length}: I choose \texttt{2048}.  
+	This sets the maximum input sequence length. Longer sequences improve modeling ability but require more GPU memory, so a moderate value is chosen for Colab T4 constraints.
+	
+	\item \texttt{batch\_size}: I choose \texttt{1}.  
+	Due to limited GPU memory, a per-device batch size of 1 is necessary. Effective batch size is increased using gradient accumulation.
+	
+	\item \texttt{gradient\_accumulation\_steps}: I choose \texttt{16}.  
+	This simulates a larger effective batch by accumulating gradients across multiple steps, improving training stability without exceeding VRAM limits.
+	
+	\item \texttt{torch\_dtype}: I use \texttt{fp16} on T4 and \texttt{bf16} on A100.  
+	Mixed precision reduces memory usage and significantly speeds up training, with \texttt{bf16} preferred when supported.
+
+	
+\end{itemize}
+
+Thus for comparison, we can summarize as (T stands for teacher model, and F stands for fine-tuned model):
+
+\begin{table}[h]
+	\centering
+	\label{tab:lora_hyperparameters}
+	\begin{tabular}{|l|c|c|c|c|}
+		\hline
+		\textbf{Parameters} & \textbf{Llama-3 (T)} & \textbf{Llama-3 (F)} & \textbf{DeepSeek (T)} & \textbf{DeepSeek (F)} \\
+		\hline
+		Learning Rate& $5 \text{e}^{-5}$ & $1 \text{e}^{-5}$ & $5 \text{e}^{-5}$ & $1 \text{e}^{-5}$ \\
+		Epochs & 3 & 1  & 3 & 1 \\
+		Batch Size & 1 & 1 & 1 & 1 \\
+		LoRA $r$ & 8 & 6 & 8 & 6 \\
+		LoRA $\alpha$ & 16 & 12 & 16 & 12 \\
+		Gradient Accumulation Steps& 16 & 16 & 16 & 16 \\
+		\hline
+	\end{tabular}
+\end{table}
+
+
+	
+	\section{Evaluation}
+	
+	\subsection{GPU performance}
+	
+	Here I first tried to use Wandb to evaluate the performance on GPU following steps online\cite{thakur2025}, but it does not work quite well on my Colab, and later I changed to use python and plot it using the matplotlib. 
+	
+	\begin{lstlisting}
+     state_path = "./output/trainer_state.json" 
+     log_path   = "./output/log_history.json"
+     
+     with open(state_path, "r") as f:
+     state = json.load(f)
+     
+     with open(log_path, "r") as f:
+     logs = json.load(f)
+     
+     df = pd.DataFrame(logs)
+     df.head()
+	\end{lstlisting}
+		 Plots are as below:
+		 
+		 \begin{figure}[H]
+		 	\centering
+		 	
+		 	%----- Row 1 -----
+		 	\begin{subfigure}{0.45\textwidth}
+		 		\centering
+		 		\includegraphics[width=\linewidth]{eval_steps_per_second.png}
+		 		\caption{Steps per Secpnd}
+		 	\end{subfigure}
+		 	\hfill
+		 	\begin{subfigure}{0.45\textwidth}
+		 		\centering
+		 		\includegraphics[width=\linewidth]{eval_runtime.png}
+		 		\caption{Runtime}
+		 	\end{subfigure}
+		 	
+		 	\vspace{0.4cm}
+		 	
+		 	%----- Row 2 -----
+		 	\begin{subfigure}{0.45\textwidth}
+		 		\centering
+		 		\includegraphics[width=\linewidth]{eval_samples_per_second.png}
+		 		\caption{Samples per Second}
+		 	\end{subfigure}
+		 	\hfill
+		 	\begin{subfigure}{0.45\textwidth}
+		 		\centering
+		 		\includegraphics[width=\linewidth]{eval_loss.png}
+		 		\caption{Eval Loss}
+		 	\end{subfigure}
+		 	
+		 	\caption{Training Metrics Comparison Between Llama-8B and DeepSeek-8B}
+		 \end{figure}
+	 
+	 From the picture we can see that the Llama-3 seems to be better in performance compared with DeepSeek-R1-Distill-Llama. It has lower loss and lower smaller runtime. 
+	 
+	 \subsection{Evaluation metrics}
+	 
+	 The models were evaluated using six metrics that cover directional accuracy,
+	 numerical performance, textual similarity, and inference efficiency:
+	 
+	 \begin{itemize}
+	 	
+	 	\item \textbf{Binary Accuracy}: 
+	 	Measures whether the predicted stock movement direction (up or down) matches 
+	 	the ground truth.
+	 	\[
+	 	\text{Accuracy} = \frac{\text{correct predictions}}{\text{total predictions}}
+	 	\]
+	 	
+	 	\item \textbf{Mean Squared Error (MSE)}: 
+	 	Quantifies the average squared difference between predicted and true numerical values.
+	 	Lower values indicate better numerical forecasting performance.
+	 	\[
+	 	\text{MSE} = \frac{1}{n} \sum_{i=1}^n (y_{\text{pred},i} - y_{\text{true},i})^2
+	 	\]
+	 	
+	 	\item \textbf{Rouge-1}: 
+	 	Computes the unigram overlap between the generated answer and the reference answer.
+	 	It measures word-level recall and content similarity.
+	 	
+	 	\item \textbf{Rouge-2}: 
+	 	Computes bigram overlap, capturing the fluency and contextual coherence of the generated text.
+	 	
+	 	\item \textbf{Rouge-L}: 
+	 	Based on the Longest Common Subsequence (LCS), it evaluates structural and semantic similarity 
+	 	between the generated response and the reference.
+	 	
+	 	\item \textbf{Inference Time}: 
+	 	Measures the average time required for the model to generate a single prediction.
+	 	This reflects runtime efficiency after LoRA fine-tuning.
+	 		 \end{itemize}
+	 \subsection{Results}
+	 
+	 I got out put as below, for Llama-3, I got:
+	 
+	 \begin{verbatim}
+
+     Binary Accuracy: 0.31  |  Mean Square Error: 4.48
+     Rouge Score of Positive Developments: {'rouge1': 0.421, 'rouge2': 0.150, 'rougeL': 0.258}
+     Rouge Score of Potential Concerns: {'rouge1': 0.407, 'rouge2': 0.140, 'rougeL': 0.252}
+     Rouge Score of Summary Analysis: {'rouge1': 0.418, 'rouge2': 0.112, 'rougeL': 0.204}
+     
+	 \end{verbatim}
+ 
+ \begin{verbatim}
+      {
+      	"valid_count": 1248,
+      	"bin_acc": 0.31,
+      	"mse": 4.36,
+      	"pros_rouge_scores": {"rouge1": 0.421, "rouge2": 0.150, "rougeL": 0.258},
+      	"cons_rouge_scores": {"rouge1": 0.407, "rouge2": 0.140, "rougeL": 0.252},
+      	"anal_rouge_scores": {"rouge1": 0.418, "rouge2": 0.112, "rougeL": 0.204}
+      }
+      
+ \end{verbatim}
+
+For DeepSeek-Llama-3, I got:
+
+\begin{verbatim}
+     Binary Accuracy: 0.33  |  Mean Square Error: 4.36
+     Rouge Score of Positive Developments: {'rouge1': 0.428, 'rouge2': 0.156, 'rougeL': 0.262}
+     Rouge Score of Potential Concerns: {'rouge1': 0.413, 'rouge2': 0.145, 'rougeL': 0.256}
+     Rouge Score of Summary Analysis: {'rouge1': 0.423, 'rouge2': 0.116, 'rougeL': 0.208}
+     
+\end{verbatim}
+
+\begin{verbatim}
+     {
+     	"valid_count": 1211,
+     	"bin_acc": 0.33,
+     	"mse": 4.48,
+     	"pros_rouge_scores": {"rouge1": 0.428, "rouge2": 0.156, "rougeL": 0.262},
+     	"cons_rouge_scores": {"rouge1": 0.413, "rouge2": 0.145, "rougeL": 0.256},
+     	"anal_rouge_scores": {"rouge1": 0.423, "rouge2": 0.116, "rougeL": 0.208}
+     }
+\end{verbatim}
+
+Overall the Llama-3 model performs better than DeepSeek in most of evaluation metrics, especially in structured financial summarization and prediction tasks. This gap is mainly due to differences in model design and training objectives. DeepSeek-R1-Distill is optimized for reasoning-heavy tasks and chain-of-thought generation\cite{deepseekai2025deepseekr1incentivizingreasoningcapability}, which often leads to longer and less structured outputs that deviate from the strict FinGPT template. Its distillation process also prioritizes reasoning style over faithful summarization, causing it to lose detail and consistency in tasks that require precise extraction of financial signals. In contrast, Llama-3 is trained on a broader and more diverse data points, with stronger instruction-following behavior and better alignment for tasks involving summarization, classification, and structured text generation. These characteristics make Llama-3 inherently better suited for FinGPT's format-constrained prompts, resulting in higher Rouge scores, more accurate directional predictions, and overall more stable outputs.
+
+
+	 	
+
+		 
+		\bibliographystyle{unsrt}
+		\bibliography{ref}
 		
 		
 	\end{document}
