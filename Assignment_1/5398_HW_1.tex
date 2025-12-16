@@ -1,0 +1,213 @@
+\documentclass[letterpaper]{article} 
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[version=4]{mhchem}
+\usepackage{stmaryrd}
+\usepackage[dvipsnames]{xcolor}
+\colorlet{LightRubineRed}{RubineRed!70}
+\colorlet{Mycolor1}{green!10!orange}
+\definecolor{Mycolor2}{HTML}{00F9DE}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{lipsum}
+\usepackage{fancyvrb}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage[export]{adjustbox}
+\graphicspath{ {./images/} }
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{capt-of}
+\usepackage{tcolorbox}
+\usepackage{lipsum}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{hyperref} 
+\usepackage{xcolor} % For custom colors
+\lstset{
+	language=Python,                % Choose the language (e.g., Python, C, R)
+	basicstyle=\ttfamily\small, % Font size and type
+	keywordstyle=\color{blue},  % Keywords color
+	commentstyle=\color{gray},  % Comments color
+	stringstyle=\color{red},    % String color
+	numbers=left,               % Line numbers
+	numberstyle=\tiny\color{gray}, % Line number style
+	stepnumber=1,               % Numbering step
+	breaklines=true,            % Auto line break
+	backgroundcolor=\color{black!5}, % Light gray background
+	frame=single,               % Frame around the code
+}
+\usepackage{float}
+\usepackage[]{amsthm} %lets us use \begin{proof}
+	\usepackage[]{amssymb} %gives us the character \varnothing
+	
+	\title{Homework 1, MATH 5398}
+	\author{Zongyi Liu}
+	\date{Wed, Oct 1, 2025}
+	\begin{document}
+		\maketitle
+		
+		\section{Preparations}
+		\subsection{Data Sources}
+		
+		Firstly we are asked to retrieve data from three sources:
+		
+		\begin{itemize}
+			\item \href{https://github.com/fja05680/sp500}{ S\&P 500 Historical Components \& Changes}
+			\item S\&P 500 component stocks from 1996-01-01 to the most current date in \href{https://wrds-www.wharton.upenn.edu/login/?next=/pages/get-data/compustat-capital-iq-standard-poors/compustat/north-america-daily/fundamentals-quarterly/}{WRDS-Fundamentals Quarterly}
+			\item daily data for S\&P 500 component stocks from 1996-01-01 to the most current date from \href{https://wrds-www.wharton.upenn.edu/login/?next=/pages/get-data/compustat-capital-iq-standard-poors/compustat/north-america-daily/security-daily/}{WRDS-Security Daily}
+		\end{itemize}		
+		
+		\subsection{Data Processing}
+		
+		Then we use the provided \texttt{Step2\_preprocess\_fundmental\_data.py}
+		to process two files, where we generated a final result in \texttt{final\_ratios.csv}, which contains headers like PE (Price–to-Earnings Ratio), PS (Price-to-Sales Ratio), PB (Price-to-Book Ratio), OPM (Operating Margin), NPM (Net Profit Margin), ROA (Return On Assets), ROE (Return on Equity), EPS (Earnings Per Share), BPS (Book Per Share), DPS (Dividend Per Share), etc. 
+		
+		In using FinRL Trading model, we follow the dynamic stock recommendation framework proposed by Yang, Liu, and Wu (2018) \cite{yang2018practical}., which formulates stock selection as a rolling, cross-sectional machine learning ranking problem rather than static factor-based prediction.
+		
+		There are also 11 excel files inside the folder, showing 11 different sectors of stocks provided in the S\&P 500.
+		
+		
+		
+		
+		\section{Mean--Variance Portfolio Construction}
+		
+		\subsection{Theoretical Framework}
+		
+		Consider $n$ risky assets with expected returns 
+		$\boldsymbol{\mu} = (\mu_1, \mu_2, \ldots, \mu_n)^\top$ 
+		and covariance matrix $\Sigma \in \mathbb{R}^{n \times n}$.  
+		Let $\boldsymbol{w} = (w_1, w_2, \ldots, w_n)^\top$ denote the portfolio weights, satisfying $
+		\sum_{i=1}^{n} w_i = 1.$
+		
+		\noindent Then\cite{markowitz1952portfolio}:
+		
+		\[
+		\text{Expected return: } \quad 
+		\mu_p = \boldsymbol{w}^\top \boldsymbol{\mu},
+		\]
+		\[
+		\text{Portfolio variance: } \quad 
+		\sigma_p^2 = \boldsymbol{w}^\top \Sigma \boldsymbol{w}.
+		\]
+		
+		\subsection{Optimization Problems}
+		
+		\underline{ Minimum-Variance Portfolio}
+		
+		Given a target return $r^*$, the investor solves:
+		\[
+		\begin{aligned}
+			\min_{\boldsymbol{w}} \quad & \boldsymbol{w}^\top \Sigma \boldsymbol{w} \\
+			\text{s.t.} \quad 
+			& \boldsymbol{w}^\top \boldsymbol{\mu} = r^*, \\
+			& \boldsymbol{w}^\top \mathbf{1} = 1.
+		\end{aligned}
+		\]
+		
+		\underline{Tangency Portfolio}
+		
+		Assuming a risk-free rate $r_f$:
+		\[
+		\max_{\boldsymbol{w}} \frac{\boldsymbol{w}^\top (\boldsymbol{\mu} - r_f \mathbf{1})}{\sqrt{\boldsymbol{w}^\top \Sigma \boldsymbol{w}}}.
+		\]
+		
+		
+		\underline{Key Formulas}
+		
+		\[
+		E[R_p] = \boldsymbol{w}^\top \boldsymbol{\mu}, 
+		\qquad 
+		\sigma_p^2 = \boldsymbol{w}^\top \Sigma \boldsymbol{w}.
+		\]
+		
+		\[
+		\text{Sharpe ratio: } 
+		\quad S_p = \frac{E[R_p] - r_f}{\sigma_p}.
+		\]
+		
+		
+		\underline{ Efficient Frontier}
+		
+		The efficient frontier represents all optimal portfolios that minimize variance for a given expected return:
+		\[
+		\mathcal{F} = \{ (\sigma_p, \mu_p) : 
+		\exists \boldsymbol{w} \text{ s.t. } 
+		\mu_p = \boldsymbol{w}^\top \boldsymbol{\mu}, \;
+		\sigma_p^2 = \boldsymbol{w}^\top \Sigma \boldsymbol{w} \}.
+		\]
+		
+		\subsection{Remarks}
+		
+		\begin{itemize}
+			\item If short selling is prohibited, impose $w_i \ge 0$.
+			\item Adding a risk-free asset allows the construction of the Capital Market Line (CML).
+			\item The tangency portfolio gives the highest Sharpe ratio and serves as the optimal risky portfolio.
+		\end{itemize}
+		
+		Here we used the \texttt{minimize} in \texttt{scipy} to calculate the MVP. 
+		
+		\section{Backtesting}
+		
+		Then I used the \texttt{backtest.py} file to do the back testing from the year 2018 as the assignment suggested. 
+		
+		
+		\includegraphics[max width=\textwidth, center]{Backtest}
+		
+		
+		\begin{table}[htbp]
+			\centering
+			\caption{Performance Metrics of Portfolio and Market Benchmarks (2018--2025)}
+			\label{tab:performance_comparison}
+			\begin{tabular}{lccc}
+				\toprule
+				Metric & Portfolio & S\&P 500 & QQQ \\
+				\midrule
+				Cumulative Return (\%)   & 1289.42 & 136.86 & 272.96 \\
+				Annual Return (\%)      & 13.21   & 13.77  & 18.51  \\
+				Annual Volatility (\%)  & 16.48   & 16.74  & 19.95  \\
+				Max Drawdown (\%)       & -27.95  & -24.77 & -32.58 \\
+				Sharpe Ratio            & 0.8017  & 0.6389 & 0.8053 \\
+				Win Rate (\%)           & 55.12   & --     & --     \\
+				Information Ratio       & 0.2984  & --     & --     \\
+				\bottomrule
+			\end{tabular}
+		\end{table}
+		
+		As shown in table, the portfolio significantly
+		outperforms the S\&P~500 and QQQ in cumulative terms, achieving a return of
+		1289.42\% over the 2018--2025 period. Despite this strong long-term growth, the
+		portfolio maintains an annual return (13.21\%) comparable to the S\&P~500 while
+		exhibiting lower annual volatility (16.48\%), resulting in a high Sharpe ratio of
+		0.8017.
+		
+		The portfolio’s maximum drawdown of $-27.95\%$ lies between that of the S\&P~500
+		and QQQ, indicating a balanced exposure to growth and downside risk. Moreover, a
+		win rate of 55.12\% and a positive information ratio of 0.2984 suggest that excess
+		returns are generated in a stable and systematic manner. Overall, the results
+		highlight a portfolio that delivers strong risk-adjusted performance while
+		controlling volatility and drawdowns.
+		
+		
+		
+		
+		\bibliographystyle{unsrt}
+		\bibliography{ref}
+		
+	\end{document}
